@@ -36,17 +36,19 @@ import java.util.Objects;
 @Configuration
 public class MqttConfig
 {
+
     @Value("${mqtt.urls}")
-    String urls;
+    private String urls;
 
     @Value("${mqtt.client.id}")
-    String clientId;
+    private String clientId;
 
     @Value("${mqtt.topic}")
-    String topic;
+    private String topic;
 
+    //    用来解析json为实体类
     @Autowired
-    ObjectMapper objectMapper;
+    private ObjectMapper objectMapper;
 
     /**
      * 先创建连接
@@ -59,8 +61,14 @@ public class MqttConfig
     {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
-        // 设置代理端的URL地址,可以是多个
-        options.setServerURIs(new String[]{urls});
+        // 设置代理端的URL地址,可以是多个,如果配置中用,分开说明是多个地址
+        if (urls.contains(","))
+        {
+            options.setServerURIs(urls.split(","));
+        } else
+        {
+            options.setServerURIs(new String[]{urls});
+        }
         options.setUserName("springboot");
         factory.setConnectionOptions(options);
         return factory;
@@ -81,9 +89,16 @@ public class MqttConfig
     @Bean
     public MessageProducer inbound()
     {
-        // Paho客户端消息驱动通道适配器,主要用来订阅主题
-        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(clientId,
-                mqttClientFactory(), topic.split(","));
+//        Paho客户端消息驱动通道适配器,主要用来订阅主题
+        final MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(clientId, mqttClientFactory());
+//        如果配置中用,分开说明是多个主题
+        if (topic.contains(","))
+        {
+            adapter.addTopic(topic.split(","));
+        } else
+        {
+            adapter.addTopic(topic);
+        }
         adapter.setCompletionTimeout(5000);
         // Paho消息转换器
         DefaultPahoMessageConverter defaultPahoMessageConverter = new DefaultPahoMessageConverter();
@@ -106,7 +121,6 @@ public class MqttConfig
     {
         return message ->
         {
-
 //            发来的消息
             String payload = message.getPayload().toString();
             try
