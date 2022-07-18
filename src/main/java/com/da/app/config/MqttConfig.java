@@ -34,8 +34,7 @@ import java.util.Objects;
  */
 @Slf4j
 @Configuration
-public class MqttConfig
-{
+public class MqttConfig {
 
     @Value("${mqtt.urls}")
     private String urls;
@@ -57,16 +56,13 @@ public class MqttConfig
      * @return factory
      */
     @Bean
-    public MqttPahoClientFactory mqttClientFactory()
-    {
+    public MqttPahoClientFactory mqttClientFactory() {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
         // 设置代理端的URL地址,可以是多个,如果配置中用,分开说明是多个地址
-        if (urls.contains(","))
-        {
+        if (urls.contains(",")) {
             options.setServerURIs(urls.split(","));
-        } else
-        {
+        } else {
             options.setServerURIs(new String[]{urls});
         }
         options.setUserName("springboot");
@@ -78,8 +74,7 @@ public class MqttConfig
      * 入站通道
      */
     @Bean
-    public MessageChannel mqttInputChannel()
-    {
+    public MessageChannel mqttInputChannel() {
         return new DirectChannel();
     }
 
@@ -87,16 +82,13 @@ public class MqttConfig
      * 入站
      */
     @Bean
-    public MessageProducer inbound()
-    {
+    public MessageProducer inbound() {
 //        Paho客户端消息驱动通道适配器,主要用来订阅主题
         final MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(clientId, mqttClientFactory());
 //        如果配置中用,分开说明是多个主题
-        if (topic.contains(","))
-        {
+        if (topic.contains(",")) {
             adapter.addTopic(topic.split(","));
-        } else
-        {
+        } else {
             adapter.addTopic(topic);
         }
         adapter.setCompletionTimeout(5000);
@@ -111,32 +103,31 @@ public class MqttConfig
     }
 
     /**
-     * 3、消息转化,中间站,在这里处理订阅频道的消息
+     * 消息转化,中间站,在这里处理订阅频道的消息
      */
 
     @Bean
     // ServiceActivator注解表明：当前方法用于处理MQTT消息,inputChannel参数指定了用于消费消息的channel。
     @ServiceActivator(inputChannel = "mqttInputChannel")
-    public MessageHandler handler()
-    {
+    public MessageHandler handler() {
         return message ->
         {
 //            发来的消息
             String payload = message.getPayload().toString();
-            try
-            {
+            try {
 //                如果是MyMessage格式的可以转成实体类
                 final MyMessage value = objectMapper.readValue(payload, MyMessage.class);
                 log.info("msg => {}", value);
-            } catch (JsonProcessingException e)
-            {
+            } catch (JsonProcessingException e) {
                 e.printStackTrace();
             }
             // byte[] bytes = (byte[]) message.getPayload(); // 收到的消息是字节格式
             String topic = Objects.requireNonNull(message.getHeaders().get("mqtt_receivedTopic")).toString();
             log.info("收到消息来自主题:{} 负载: {}", topic, payload);
 //            根据主题分别进行消息处理。
-//            if (topic.matches(".+/sensor")){}
+            if (topic.equals("one")) {
+                log.info("这里只处理来自one主题的消息 => {}", payload);
+            }
         };
     }
 
@@ -145,8 +136,7 @@ public class MqttConfig
      * 出站通道
      */
     @Bean
-    public MessageChannel mqttOutboundChannel()
-    {
+    public MessageChannel mqttOutboundChannel() {
         return new DirectChannel();
     }
 
@@ -155,8 +145,7 @@ public class MqttConfig
      */
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
-    public MessageHandler outbound()
-    {
+    public MessageHandler outbound() {
         // 发送消息和消费消息Channel可以使用相同MqttPahoClientFactory
         MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler("publishClient", mqttClientFactory());
         messageHandler.setAsync(true); // 如果设置成true,即异步,发送消息时将不会阻塞。

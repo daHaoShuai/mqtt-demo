@@ -4,15 +4,13 @@ spring:
     name: mqtt-demo
 # 应用服务 WEB 访问端口
 server:
-  port: 8080
+  port: 9999
 
 # Mqtt配置
 mqtt:
-  urls: tcp://localhost:5555
+  urls: tcp://192.168.3.62:1883
   username: one
   password: ok
   client:
     id: ${random.value}
   topic: one,two
-
-
