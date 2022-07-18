@@ -20,6 +20,8 @@ import org.springframework.integration.mqtt.support.DefaultPahoMessageConverter;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageHandler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -44,10 +46,18 @@ public class MqttConfig {
 
     @Value("${mqtt.topic}")
     private String topic;
+    //    保存动态的主题列表
+    private final List<String> dynamicTopic = new ArrayList<>();
 
     //    用来解析json为实体类
     @Autowired
     private ObjectMapper objectMapper;
+
+    //    这里保存着动态订阅的主题
+    @Bean(value = "dynamicTopic")
+    public List<String> getDynamicTopic() {
+        return dynamicTopic;
+    }
 
     /**
      * 先创建连接
@@ -123,10 +133,14 @@ public class MqttConfig {
             }
             // byte[] bytes = (byte[]) message.getPayload(); // 收到的消息是字节格式
             String topic = Objects.requireNonNull(message.getHeaders().get("mqtt_receivedTopic")).toString();
-            log.info("收到消息来自主题:{} 负载: {}", topic, payload);
+//            log.info("收到消息来自主题:{} 负载: {}", topic, payload);
 //            根据主题分别进行消息处理。
             if (topic.equals("one")) {
                 log.info("这里只处理来自one主题的消息 => {}", payload);
+            }
+            if (dynamicTopic.size() > 0) {
+                log.info("这里处理动态订阅的主题 => {}", dynamicTopic);
+                log.info("收到消息来自主题:{} 负载: {}", topic, payload);
             }
         };
     }

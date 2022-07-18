@@ -2,6 +2,7 @@ package com.da.app.controller;
 
 import com.da.app.po.MyMessage;
 import com.da.app.service.MqttGateway;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.integration.core.MessageProducer;
 import org.springframework.integration.mqtt.inbound.MqttPahoMessageDrivenChannelAdapter;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.List;
 
 /**
  * @Author Da
@@ -24,12 +26,17 @@ import javax.annotation.Resource;
  * @Date 2022/7/13 上午 10:50
  */
 @RestController
+@Slf4j
 public class MqttController {
     @Resource
     private MqttGateway mqttGateway;
 
     @Autowired
-    MessageProducer producer;
+    private MessageProducer producer;
+
+    @Autowired
+    private List<String> dynamicTopic;
+
 
     @PostMapping("/send")
     public String send(@RequestBody MyMessage myMessage) {
@@ -42,6 +49,9 @@ public class MqttController {
     public String add(@PathVariable String topic) {
 //        动态添加topic
         ((MqttPahoMessageDrivenChannelAdapter) producer).addTopic(topic);
+//        最好是把主题消息动态的存到数据库中
+        dynamicTopic.add(topic);
+        log.info("订阅了" + topic + "主题");
         return topic;
     }
 }
