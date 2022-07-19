@@ -1,4 +1,4 @@
-# springboot使用mqtt的一个小例子
+# springboot使用mqtt的和ActiveMQ一个小例子
 
 > 安装mqtt服务器(我用的是docker安装的)
 
@@ -30,11 +30,25 @@ docker run --name emq -p 18083:18083 -p 1883:1883 -p 8084:8084 -p 8883:8883 -p 8
 >
 > 这里可以下载MQTTX客户端工具测试服务器 https://mqttx.app/zh
 
-> 需要的mqtt依赖
+> 安装ActiveMQ服务器(我用的是docker安装的)
+
+```shell
+ # 查询镜像
+  docker search activemq
+ # 取start最多的镜像
+  docker pull docker.io/webcenter/activemq
+ # 启动镜像容器
+  docker run -d --name activemq -p 61616:61616 -p 8161:8161 --restart=always docker.io/webcenter/activemq:latest
+```
+
+> 访问web页面 http://宿主机IP:8161 #默认账号:admin 默认密码:admin
+
+> 需要的mqtt和activeMQ依赖
 
 ```xml
 
 <dependencies>
+    <!--        mqtt依赖包-->
     <dependency>
         <groupId>org.eclipse.paho</groupId>
         <artifactId>org.eclipse.paho.client.mqttv3</artifactId>
@@ -43,6 +57,11 @@ docker run --name emq -p 18083:18083 -p 1883:1883 -p 8084:8084 -p 8883:8883 -p 8
     <dependency>
         <groupId>org.springframework.integration</groupId>
         <artifactId>spring-integration-mqtt</artifactId>
+    </dependency>
+    <!--         ActiveMQ依赖包 -->
+    <dependency>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-activemq</artifactId>
     </dependency>
 </dependencies>
 ```

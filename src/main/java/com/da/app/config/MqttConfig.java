@@ -1,6 +1,7 @@
 package com.da.app.config;
 
 import com.da.app.po.MyMessage;
+import com.da.app.service.ActiveMqService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
@@ -49,9 +50,12 @@ public class MqttConfig {
     //    保存动态的主题列表
     private final List<String> dynamicTopic = new ArrayList<>();
 
-    //    用来解析json为实体类
     @Autowired
-    private ObjectMapper objectMapper;
+    private ActiveMqService activeMqService;
+
+    //    用来解析json为实体类
+//    @Autowired
+//    private ObjectMapper objectMapper;
 
     //    这里保存着动态订阅的主题
     @Bean(value = "dynamicTopic")
@@ -124,20 +128,22 @@ public class MqttConfig {
         {
 //            发来的消息
             String payload = message.getPayload().toString();
-            try {
+//            try {
 //                如果是MyMessage格式的可以转成实体类
-                final MyMessage value = objectMapper.readValue(payload, MyMessage.class);
-                log.info("msg => {}", value);
-            } catch (JsonProcessingException e) {
-                e.printStackTrace();
-            }
+//                final MyMessage value = objectMapper.readValue(payload, MyMessage.class);
+//                log.info("msg => {}", value);
+//            } catch (JsonProcessingException e) {
+//                e.printStackTrace();
+//            }
             // byte[] bytes = (byte[]) message.getPayload(); // 收到的消息是字节格式
             String topic = Objects.requireNonNull(message.getHeaders().get("mqtt_receivedTopic")).toString();
-//            log.info("收到消息来自主题:{} 负载: {}", topic, payload);
+//            交给activeMq处理
+            activeMqService.send(topic, payload);
+            log.info("收到消息来自主题:{} 负载: {}", topic, payload);
 //            根据主题分别进行消息处理。
-            if (topic.equals("one")) {
-                log.info("这里只处理来自one主题的消息 => {}", payload);
-            }
+//            if (topic.equals("one")) {
+//                log.info("这里只处理来自one主题的消息 => {}", payload);
+//            }
             if (dynamicTopic.size() > 0) {
                 log.info("这里处理动态订阅的主题 => {}", dynamicTopic);
                 log.info("收到消息来自主题:{} 负载: {}", topic, payload);
